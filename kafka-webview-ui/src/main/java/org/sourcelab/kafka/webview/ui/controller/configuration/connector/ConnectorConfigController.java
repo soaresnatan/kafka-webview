@@ -31,6 +31,8 @@ import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperationsFactory;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginDetails;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginList;
 import org.sourcelab.kafka.webview.ui.manager.ui.BreadCrumbManager;
+import org.sourcelab.kafka.webview.ui.manager.ui.FlashMessage;
+import org.sourcelab.kafka.webview.ui.model.Cluster;
 import org.sourcelab.kafka.webview.ui.model.Connector;
 import org.sourcelab.kafka.webview.ui.repository.ClusterRepository;
 import org.sourcelab.kafka.webview.ui.repository.ConnectorRepository;
@@ -82,7 +84,7 @@ public class ConnectorConfigController extends BaseController {
      * GET Displays create view form.
      */
     @RequestMapping(path = "/create", method = RequestMethod.GET)
-    public String createViewForm(final ConnectorForm connectorForm, final Model model) {
+    public String createConnectorForm(final ConnectorForm connectorForm, final Model model) {
         // Setup breadcrumbs
         if (!model.containsAttribute("BreadCrumbs")) {
             setupBreadCrumbs(model, "Create", null);
@@ -128,7 +130,75 @@ public class ConnectorConfigController extends BaseController {
             @RequestParam final Map<String, String> allRequestParams) {
 
         // Determine if we're updating or creating
-        final boolean updateExisting = connectorForm.exists();
+//        final boolean updateExisting = connectorForm.exists();
+//
+//        // Ensure that cluster name is not alreadyx used.
+//        final Connector existingConnector = connectorRepository.findByName(connectorForm.getName());
+//        if (existingConnector != null) {
+//            // If we're updating, exclude our own id.
+//            if (!updateExisting
+//                    || (updateExisting && existingConnector.getId() != existingConnector.getId())) {
+//                bindingResult.addError(new FieldError(
+//                        "connectorForm", "name", connectorForm.getName(), true, null, null, "Name is already used")
+//                );
+//            }
+//        }
+//
+//        // If we have errors
+//        if (bindingResult.hasErrors()) {
+//            return createConnectorForm(connectorForm, model);
+//        }
+//
+//        // If we're updating
+//        final Connector connector;
+//        final String successMessage;
+//        if (updateExisting) {
+//            // Retrieve it
+//            final Optional<Connector> connectorOptional = connectorRepository.findById(connectorForm.getId());
+//            if (!connectorOptional.isPresent()) {
+//                // Set flash message and redirect
+//                redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+//
+//                // redirect to view index
+//                return "redirect:/configuration/connector";
+//            }
+//            connector = connectorOptional.get();
+//
+//            successMessage = "Updated connector successfully!";
+//        } else {
+//            connector = new Connector();
+//            //connector.setCreatedAt(new Timestamp(System.currentTimeMillis())); Colocar Horario de criação
+//            successMessage = "Created new Connector!";
+//        }
+
+        Connector connector = new Connector();
+        //connector.setCreatedAt(new Timestamp(System.currentTimeMillis())); Colocar Horario de criação
+        String successMessage = "Created new Connector!";
+
+        // Update properties
+        final Cluster cluster = clusterRepository.findById(connectorForm.getClusterId()).get();
+
+        connector.setName(connectorForm.getName());
+        connector.setCluster(cluster);
+        connector.setPlugin("x");
+        connector.setTask(1);
+
+        boolean result = false;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.addConnector(cluster.getConnectorHosts(), connectorForm.getName(), allRequestParams);
+        }
+
+        if (result) {
+            // Persist the connector
+            //connector.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+            connectorRepository.save(connector);
+
+            // Set flash message
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess(successMessage));
+        } else {
+            // Set flash message
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Error ..."));
+        }
 
         // redirect to cluster index
         return "redirect:/configuration/connector";

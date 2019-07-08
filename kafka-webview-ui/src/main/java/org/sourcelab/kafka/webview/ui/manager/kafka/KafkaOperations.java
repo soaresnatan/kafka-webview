@@ -62,6 +62,13 @@ public class KafkaOperations implements AutoCloseable {
         return new PluginList(kafkaConnect.getConnectorPlugins());
     }
 
+    public boolean addConnector(String host, String name, Map<String, String> map) {
+        kafkaConnect = new KafkaConnect(host);
+
+        return kafkaConnect.addConnector(name, map);
+
+    }
+
     public PluginDetails getPluginDetails(PluginList pluginList, String plugin) {
         PluginDetails pluginDetails = pluginList.getPlugin(plugin);
         return pluginDetails;

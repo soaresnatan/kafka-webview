@@ -5,7 +5,7 @@
         xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <title>View Configuration</title>
+    <title>Connector Configuration</title>
 </head>
 
 <body>
@@ -30,7 +30,7 @@
                             jQuery(pluginSelector)
                                 .append(
                                     jQuery('<option></option>')
-                                        .attr('value', plugin.name)
+                                        .attr('value', plugin.id)
                                         .text(plugin.name)
                                 );
                         });
@@ -40,31 +40,31 @@
                 // Handle selecting a plugin
                 jQuery('#connector').change(function () {
                     var plugin = jQuery(this).val();
+                    var form = jQuery('#formPlugin');
+
                     if (plugin === '!') {
-                        // Clear partitions
-                        return
+                        form.empty();
                     }
                     var clusterId = jQuery('#clusterId').val();
                     var plugin = jQuery('#connector').val();
 
+                    form.empty();
                     ApiClient.getPluginDetails(clusterId, plugin, function (results) {
-                        // var partitionSelector = jQuery('#partitions');
-                        // jQuery(partitionSelector).empty();
-                        // jQuery(partitionSelector).removeAttr('disabled');
-                        // jQuery(partitionSelector).append(jQuery('<option></option>')
-                        //     .attr('value', '')
-                        //     .text('View all partitions')
-                        //     .attr('selected', 'selected')
-                        // );
-                        //
-                        jQuery.each(results, function (index, result) {
-                            console.log(result.name);
-                            // jQuery(partitionSelector)
-                            //     .append(
-                            //         jQuery('<option></option>')
-                            //             .attr('value', result.partition)
-                            //             .text(result.partition)
-                            //     );
+                        console.log(results);
+
+                        jQuery.each(results.configValidationResults.configs, function (index, plugin) {
+
+                            var labelField = '<label class="col-md-3 form-control-label" for="' + plugin.definition.name + '">' + plugin.definition.displayName + '</label>';
+                            var valueField = '<div class="col-md-9"> <input class="form-control" ' +
+                                'type="' + plugin.definition.type + '" ' +
+                                'name="connectorConfig.' + plugin.definition.name + '" ' +
+                                'id="connectorConfig.' + plugin.definition.name + '" ' +
+                                'th:value="' + plugin.definition.defaultValue + '" ' +
+                                'placeholder="' + plugin.definition.documentation + ' "> </div>';
+                            var formField = '<div class="form-group row">' + labelField + valueField + '</div>';
+
+                            jQuery(form).append(jQuery(formField));
+
                         });
                     });
                 });
@@ -86,23 +86,6 @@
                             <!-- Topic Options -->
                             <h6>Connector Selection</h6>
                             <hr>
-
-                            <!-- Name -->
-                            <div class="form-group row">
-                                <label class="col-md-3 form-control-label" for="name">
-                                    Connector Name
-                                </label>
-                                <div class="col-md-9">
-                                    <input
-                                            class="form-control" id="name" name="name"
-                                            placeholder="A unique name to identify this view"
-                                            th:errorclass="is-invalid"
-                                            th:value="*{name}"
-                                            type="text">
-                                    <div class="invalid-feedback" th:errors="*{name}"
-                                         th:if="${#fields.hasErrors('name')}"></div>
-                                </div>
-                            </div>
 
                             <!-- Cluster -->
                             <div class="form-group row">
@@ -135,7 +118,7 @@
                                             th:attr="disabled=${plugins.isEmpty()}? 'disabled'"
                                             th:errorclass="is-invalid"
                                             th:field="*{connector}">
-                                        <option value="!">Please select a Connector</option>
+                                        <option value="!">Please select a Plugin</option>
                                         <option th:each="plugin : ${plugins}" th:if="${plugins} != null"
                                                 th:text="${plugin.name}" th:value="${plugin.name}">Plugin Name
                                         </option>
@@ -145,7 +128,10 @@
                                 </div>
                             </div>
 
-                            <!--                            Create form from plugin -->
+                            <!-- Fields -->
+                            <div id="formPlugin">
+
+                            </div>
 
                         </div>
 

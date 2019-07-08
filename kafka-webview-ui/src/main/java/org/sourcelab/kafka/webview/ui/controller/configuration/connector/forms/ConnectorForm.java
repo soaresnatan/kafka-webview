@@ -28,7 +28,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 /**
- * Represents the Create/Update View Form.
+ * Represents the Create/Update Connector Form.
  */
 public class ConnectorForm {
     private Long id = null;

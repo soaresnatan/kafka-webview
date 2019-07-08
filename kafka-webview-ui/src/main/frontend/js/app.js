@@ -246,7 +246,7 @@ var ApiClient = {
     },
     getPluginDetails: function (clusterId, plugin, callback) {
         jQuery
-            .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/plugin' + plugin + '/details'), '', callback)
+            .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/plugin/' + plugin + '/details'), '', callback)
             .fail(ApiClient.defaultErrorHandler);
     },
     getTopicDetails: function(clusterId, topic, callback) {

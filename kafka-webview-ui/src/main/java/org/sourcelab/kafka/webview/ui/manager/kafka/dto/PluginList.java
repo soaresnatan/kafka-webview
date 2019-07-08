@@ -38,7 +38,7 @@ public class PluginList {
     }
 
     public PluginDetails getPlugin(String plugin) {
-        return this.plugins.stream().filter(pluginT -> pluginT.getName().equals(plugin)).findAny().orElse(null);
+        return this.plugins.stream().filter(pluginT -> pluginT.getId().equals(plugin)).findAny().orElse(null);
     }
 
     @Override

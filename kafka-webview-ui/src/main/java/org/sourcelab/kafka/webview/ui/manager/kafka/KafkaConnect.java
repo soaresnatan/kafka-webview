@@ -7,6 +7,7 @@ import org.sourcelab.kafka.connect.apiclient.request.dto.*;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginDetails;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class KafkaConnect {
 
@@ -37,9 +38,16 @@ public class KafkaConnect {
         return kafkaConnectClient.getConnectorStatus(connectorName);
     }
 
-    public ConnectorDefinition addConnector(String name, Map<String, String> config) {
-        NewConnectorDefinition connectorDefinition = NewConnectorDefinition.newBuilder().withName(name).withConfig(config).build();
-        return kafkaConnectClient.addConnector(connectorDefinition);
+    public Boolean addConnector(String name, Map<String, String> config) {
+        NewConnectorDefinition newConnectorDefinition = NewConnectorDefinition.newBuilder().withName(name).withConfig(config).build();
+
+        ConnectorPluginConfigValidationResults result = validatePlugin(name, config);
+
+        if (result.getErrorCount() > 0)
+            return false;
+
+        kafkaConnectClient.addConnector(newConnectorDefinition);
+        return true;
     }
 
     public ConnectorDefinition updateConnectorConfig(final String connectorName, final Map<String, String> config) {
@@ -77,6 +85,7 @@ public class KafkaConnect {
     public List<PluginDetails> getConnectorPlugins() {
         ObjectMapper objectMapper = new ObjectMapper();
 
+
         Collection<ConnectorPlugin> connectorPlugins = kafkaConnectClient.getConnectorPlugins();
         Iterator iterator = connectorPlugins.iterator();
 
@@ -88,13 +97,22 @@ public class KafkaConnect {
             map.put("connector.class", connectorPlugin.getClassName());
             map.put("topics", "getPlugins");
 
-            ConnectorPluginConfigDefinition definition = new ConnectorPluginConfigDefinition(connectorPlugin.getClassName(), map);
-            ConnectorPluginConfigValidationResults options = kafkaConnectClient.validateConnectorPluginConfig(definition);
+            ConnectorPluginConfigValidationResults options = validatePlugin(connectorPlugin.getClassName(), map);
 
-            pluginDetails.add(new PluginDetails(connectorPlugin.getClassName(), options));
+            String namePlugin = connectorPlugin.getClassName();
+            String splitPLugin[] = namePlugin.split(Pattern.quote("."));
+            namePlugin = splitPLugin[splitPLugin.length - 1];
+
+            pluginDetails.add(new PluginDetails(namePlugin, connectorPlugin.getClassName(), options));
         }
 
         return pluginDetails;
+    }
+
+    public ConnectorPluginConfigValidationResults validatePlugin(String name, Map<String, String> map) {
+        ConnectorPluginConfigDefinition definition = new ConnectorPluginConfigDefinition(name, map);
+
+        return kafkaConnectClient.validateConnectorPluginConfig(definition);
     }
 
 }
