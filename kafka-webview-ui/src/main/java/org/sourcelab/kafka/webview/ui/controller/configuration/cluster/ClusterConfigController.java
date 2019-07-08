@@ -24,6 +24,7 @@
 
 package org.sourcelab.kafka.webview.ui.controller.configuration.cluster;
 
+import groovy.util.logging.Slf4j;
 import org.apache.kafka.common.KafkaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,7 @@ import java.util.Optional;
 /**
  * Controller for Cluster CRUD operations.
  */
+@Slf4j
 @Controller
 @RequestMapping("/configuration/cluster")
 public class ClusterConfigController extends BaseController {
@@ -351,6 +353,7 @@ public class ClusterConfigController extends BaseController {
         // Update properties
         cluster.setName(clusterForm.getName());
         cluster.setBrokerHosts(clusterForm.getBrokerHosts());
+        cluster.setConnectorHosts(clusterForm.getConnectorHosts());
         cluster.setValid(false);
         clusterRepository.save(cluster);
 

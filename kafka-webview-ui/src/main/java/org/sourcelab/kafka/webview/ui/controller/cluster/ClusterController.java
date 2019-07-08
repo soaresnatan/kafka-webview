@@ -29,6 +29,7 @@ import org.sourcelab.kafka.webview.ui.manager.ui.BreadCrumbManager;
 import org.sourcelab.kafka.webview.ui.manager.ui.FlashMessage;
 import org.sourcelab.kafka.webview.ui.model.Cluster;
 import org.sourcelab.kafka.webview.ui.repository.ClusterRepository;
+import org.sourcelab.kafka.webview.ui.repository.ConnectorRepository;
 import org.sourcelab.kafka.webview.ui.repository.ViewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -55,6 +56,9 @@ public class ClusterController extends BaseController {
     @Autowired
     private ViewRepository viewRepository;
 
+    @Autowired
+    private ConnectorRepository connectorRepository;
+
     /**
      * GET Displays cluster list.
      */
@@ -70,12 +74,17 @@ public class ClusterController extends BaseController {
 
         // Retrieve how many views for each cluster
         final Map<Long, Long> viewsByClusterId = new HashMap<>();
+        final Map<Long, Long> connectorsByClusterId = new HashMap<>();
+
         for (final Cluster cluster: clusterList) {
             final Long clusterId = cluster.getId();
-            final Long count = viewRepository.countByClusterId(cluster.getId());
-            viewsByClusterId.put(clusterId, count);
+            final Long countViews = viewRepository.countByClusterId(cluster.getId());
+            final Long countConnectors = connectorRepository.countByClusterId(cluster.getId());
+            viewsByClusterId.put(clusterId, countViews);
+            connectorsByClusterId.put(clusterId, countConnectors);
         }
         model.addAttribute("viewsByClusterId", viewsByClusterId);
+        model.addAttribute("connectorsByClusterId", connectorsByClusterId);
 
         // Display template
         return "cluster/index";

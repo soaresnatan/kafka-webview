@@ -95,6 +95,23 @@
                                 </div>
                             </div>
 
+                            <!-- Connectors -->
+                            <div class="form-group row">
+                                <label class="col-md-3 form-control-label" for="connectors">
+                                    Connectors
+                                </label>
+                                <div class="col-md-9">
+                                    <input
+                                            class="form-control" id="connectors" name="connectors"
+                                            placeholder="Comma separated list of connectors.  hostname1:8083,hostname2:8083"
+                                            th:errorclass="is-invalid"
+                                            th:field="*{connectorHosts}"
+                                            type="text">
+                                    <div class="invalid-feedback" th:errors="*{connectorHosts}"
+                                         th:if="${#fields.hasErrors('connectorHosts')}"/>
+                                </div>
+                            </div>
+
                             <h6>SSL Settings</h6>
                             <hr>
 

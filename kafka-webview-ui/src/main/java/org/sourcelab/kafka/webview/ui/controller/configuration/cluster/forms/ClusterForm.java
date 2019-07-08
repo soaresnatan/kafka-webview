@@ -43,6 +43,10 @@ public class ClusterForm {
     @Size(min = 2)
     private String brokerHosts;
 
+    @NotNull(message = "Enter kafka connector hosts")
+    @Size(min = 2)
+    private String connectorHosts;
+
     // SSL Options
     private Boolean ssl = false;
 
@@ -112,6 +116,14 @@ public class ClusterForm {
 
     public void setBrokerHosts(final String brokerHosts) {
         this.brokerHosts = brokerHosts;
+    }
+
+    public String getConnectorHosts() {
+        return connectorHosts;
+    }
+
+    public void setConnectorHosts(String connectorHosts) {
+        this.connectorHosts = connectorHosts;
     }
 
     public Boolean getSsl() {

@@ -24,11 +24,7 @@
 
 package org.sourcelab.kafka.webview.ui.model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 /**
  * Cluster Entity.
@@ -44,6 +40,9 @@ public class Cluster {
 
     @Column(nullable = false)
     private String brokerHosts;
+
+    @Column(nullable = true)
+    private String connectorHosts;
 
     @Column(nullable = false)
     private boolean isSslEnabled;
@@ -104,6 +103,14 @@ public class Cluster {
 
     public void setBrokerHosts(final String brokerHosts) {
         this.brokerHosts = brokerHosts;
+    }
+
+    public String getConnectorHosts() {
+        return connectorHosts;
+    }
+
+    public void setConnectorHosts(String connectorHosts) {
+        this.connectorHosts = connectorHosts;
     }
 
     public boolean isSslEnabled() {
@@ -184,6 +191,7 @@ public class Cluster {
             + "id=" + id
             + ", name='" + name + '\''
             + ", brokerHosts='" + brokerHosts + '\''
+                + ", connectorHosts='" + connectorHosts + '\''
             + ", isSslEnabled=" + isSslEnabled
             + ", trustStoreFile='" + trustStoreFile + '\''
             + ", keyStoreFile='" + keyStoreFile + '\''

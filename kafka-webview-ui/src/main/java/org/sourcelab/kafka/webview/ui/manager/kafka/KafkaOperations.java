@@ -24,53 +24,16 @@
 
 package org.sourcelab.kafka.webview.ui.manager.kafka;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AlterConfigsResult;
-import org.apache.kafka.clients.admin.Config;
-import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
-import org.apache.kafka.clients.admin.DeleteConsumerGroupsResult;
-import org.apache.kafka.clients.admin.DeleteTopicsResult;
-import org.apache.kafka.clients.admin.DescribeConfigsResult;
-import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
-import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
-import org.apache.kafka.clients.admin.ListConsumerGroupsResult;
-import org.apache.kafka.clients.admin.ListTopicsOptions;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.admin.TopicListing;
+import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.BrokerConfig;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConfigItem;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupIdentifier;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupOffsets;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupOffsetsWithTailPositions;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.CreateTopic;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.NodeDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.NodeList;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PartitionDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PartitionOffset;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PartitionOffsetWithTailPosition;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TailOffsets;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicConfig;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicList;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicPartition;
+import org.sourcelab.kafka.webview.ui.manager.kafka.dto.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -81,6 +44,7 @@ import java.util.stream.Collectors;
 public class KafkaOperations implements AutoCloseable {
     private final AdminClient adminClient;
     private final KafkaConsumer<String, String> consumerClient;
+    private KafkaConnect kafkaConnect;
 
     /**
      * Constructor.
@@ -90,6 +54,17 @@ public class KafkaOperations implements AutoCloseable {
     public KafkaOperations(final AdminClient adminClient, final KafkaConsumer<String, String> consumerClient) {
         this.adminClient = adminClient;
         this.consumerClient = consumerClient;
+    }
+
+    public PluginList getAvailablePlugins(String host) {
+        kafkaConnect = new KafkaConnect(host);
+
+        return new PluginList(kafkaConnect.getConnectorPlugins());
+    }
+
+    public PluginDetails getPluginDetails(PluginList pluginList, String plugin) {
+        PluginDetails pluginDetails = pluginList.getPlugin(plugin);
+        return pluginDetails;
     }
 
     /**

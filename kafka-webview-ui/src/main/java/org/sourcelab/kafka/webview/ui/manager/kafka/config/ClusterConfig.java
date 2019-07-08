@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
  */
 public class ClusterConfig {
     private final Set<String> brokerHosts;
+    private final Set<String> connectorHosts;
 
     /**
      * SSL Configuration Options.
@@ -62,19 +63,21 @@ public class ClusterConfig {
      * Private constructor for connecting to SSL brokers.
      */
     private ClusterConfig(
-        final Set<String> brokerHosts,
-        final boolean useSsl,
-        final String keyStoreFile,
-        final String keyStorePassword,
-        final String trustStoreFile,
-        final String trustStorePassword,
-        final boolean useSasl,
-        final String saslPlaintextUsername,
-        final String saslPlaintextPassword,
-        final String saslMechanism,
-        final String saslJaas) {
+            final Set<String> brokerHosts,
+            final Set<String> connectorHosts,
+            final boolean useSsl,
+            final String keyStoreFile,
+            final String keyStorePassword,
+            final String trustStoreFile,
+            final String trustStorePassword,
+            final boolean useSasl,
+            final String saslPlaintextUsername,
+            final String saslPlaintextPassword,
+            final String saslMechanism,
+            final String saslJaas) {
 
         this.brokerHosts = brokerHosts;
+        this.connectorHosts = connectorHosts;
 
         // SSL Options
         this.useSsl = useSsl;
@@ -93,6 +96,47 @@ public class ClusterConfig {
 
     public Set<String> getBrokerHosts() {
         return brokerHosts;
+    }
+
+    /**
+     * Create a new Builder instance using a Cluster model entity and SecretManager
+     * for decrypting secrets.
+     *
+     * @param cluster       Cluster entity to build config off of.
+     * @param secretManager SecretManager to decrypt secrets with.
+     * @return Builder instance.
+     */
+    public static Builder newBuilder(final Cluster cluster, final SecretManager secretManager) {
+        final ClusterConfig.Builder builder = ClusterConfig.newBuilder()
+                .withBrokerHosts(cluster.getBrokerHosts()).withConnectorHosts(cluster.getConnectorHosts());
+
+        if (cluster.isSslEnabled()) {
+            builder
+                    .withUseSsl(cluster.isSslEnabled())
+                    .withKeyStoreFile(cluster.getKeyStoreFile())
+                    .withKeyStorePassword(secretManager.decrypt(cluster.getKeyStorePassword()))
+                    .withTrustStoreFile(cluster.getTrustStoreFile())
+                    .withTrustStorePassword(secretManager.decrypt(cluster.getTrustStorePassword()));
+        } else {
+            builder.withUseSsl(false);
+        }
+
+        if (cluster.isSaslEnabled()) {
+            // Parse Properties.
+            final SaslUtility saslUtility = new SaslUtility(secretManager);
+            final SaslProperties saslProperties = saslUtility.decodeProperties(cluster);
+
+            builder
+                    .withUseSasl(true)
+                    .withSaslMechanism(saslProperties.getMechanism())
+                    .withSaslPlaintextUsername(saslProperties.getPlainUsername())
+                    .withSaslPlaintextPassword(saslProperties.getPlainPassword())
+                    .withSaslJaas(saslProperties.getJaas());
+        } else {
+            builder.withUseSasl(false);
+        }
+
+        return builder;
     }
 
     public boolean isUseSsl() {
@@ -139,16 +183,8 @@ public class ClusterConfig {
         return saslJaas;
     }
 
-    @Override
-    public String toString() {
-        return "ClusterConfig{"
-            + "brokerHosts=" + brokerHosts
-            + ", useSsl=" + useSsl
-            + ", keyStoreFile='" + keyStoreFile + '\''
-            + ", trustStoreFile='" + trustStoreFile + '\''
-            + ", useSasl=" + useSasl
-            + ", saslMechanism='" + saslMechanism + '\''
-            + '}';
+    public Set<String> getConnectorHosts() {
+        return connectorHosts;
     }
 
     /**
@@ -158,45 +194,17 @@ public class ClusterConfig {
         return new Builder();
     }
 
-    /**
-     * Create a new Builder instance using a Cluster model entity and SecretManager
-     * for decrypting secrets.
-     *
-     * @param cluster Cluster entity to build config off of.
-     * @param secretManager SecretManager to decrypt secrets with.
-     * @return Builder instance.
-     */
-    public static Builder newBuilder(final Cluster cluster, final SecretManager secretManager) {
-        final ClusterConfig.Builder builder = ClusterConfig.newBuilder()
-            .withBrokerHosts(cluster.getBrokerHosts());
-
-        if (cluster.isSslEnabled()) {
-            builder
-                .withUseSsl(cluster.isSslEnabled())
-                .withKeyStoreFile(cluster.getKeyStoreFile())
-                .withKeyStorePassword(secretManager.decrypt(cluster.getKeyStorePassword()))
-                .withTrustStoreFile(cluster.getTrustStoreFile())
-                .withTrustStorePassword(secretManager.decrypt(cluster.getTrustStorePassword()));
-        } else {
-            builder.withUseSsl(false);
-        }
-
-        if (cluster.isSaslEnabled()) {
-            // Parse Properties.
-            final SaslUtility saslUtility = new SaslUtility(secretManager);
-            final SaslProperties saslProperties = saslUtility.decodeProperties(cluster);
-
-            builder
-                .withUseSasl(true)
-                .withSaslMechanism(saslProperties.getMechanism())
-                .withSaslPlaintextUsername(saslProperties.getPlainUsername())
-                .withSaslPlaintextPassword(saslProperties.getPlainPassword())
-                .withSaslJaas(saslProperties.getJaas());
-        } else {
-            builder.withUseSasl(false);
-        }
-
-        return builder;
+    @Override
+    public String toString() {
+        return "ClusterConfig{"
+            + "brokerHosts=" + brokerHosts
+                + "connectorHosts=" + connectorHosts
+            + ", useSsl=" + useSsl
+            + ", keyStoreFile='" + keyStoreFile + '\''
+            + ", trustStoreFile='" + trustStoreFile + '\''
+            + ", useSasl=" + useSasl
+            + ", saslMechanism='" + saslMechanism + '\''
+            + '}';
     }
 
     /**
@@ -204,6 +212,7 @@ public class ClusterConfig {
      */
     public static final class Builder {
         private Set<String> brokerHosts;
+        private Set<String> connectorHosts;
 
         /**
          * SSL Configuration Options.
@@ -240,6 +249,12 @@ public class ClusterConfig {
         public Builder withBrokerHosts(final String... brokerHosts) {
             this.brokerHosts = new HashSet<>();
             this.brokerHosts.addAll(Arrays.asList(brokerHosts));
+            return this;
+        }
+
+        public Builder withConnectorHosts(final String... connectorHosts) {
+            this.connectorHosts = new HashSet<>();
+            this.connectorHosts.addAll(Arrays.asList(connectorHosts));
             return this;
         }
 
@@ -329,6 +344,7 @@ public class ClusterConfig {
         public ClusterConfig build() {
             return new ClusterConfig(
                 brokerHosts,
+                    connectorHosts,
                 // SSL Options.
                 useSsl,
                 keyStoreFile,

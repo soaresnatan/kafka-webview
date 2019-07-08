@@ -239,6 +239,16 @@ var ApiClient = {
             .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/nodes'), '', callback)
             .fail(ApiClient.defaultErrorHandler);
     },
+    getPlugins: function (clusterId, callback) {
+        jQuery
+            .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/plugins/list'), '', callback)
+            .fail(ApiClient.defaultErrorHandler);
+    },
+    getPluginDetails: function (clusterId, plugin, callback) {
+        jQuery
+            .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/plugin' + plugin + '/details'), '', callback)
+            .fail(ApiClient.defaultErrorHandler);
+    },
     getTopicDetails: function(clusterId, topic, callback) {
         jQuery
             .getJSON(ApiClient.buildUrl('api/cluster/' + clusterId + '/topic/' + topic + '/details'), '', callback)

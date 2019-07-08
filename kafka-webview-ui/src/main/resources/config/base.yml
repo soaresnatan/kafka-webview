@@ -54,7 +54,7 @@ app:
   consumerIdPrefix: "KafkaWebViewConsumer"
   requireSsl: true
   user:
-    enabled: true
+    enabled: false
     ## Ldap auth settings
     ldap:
       enabled: false

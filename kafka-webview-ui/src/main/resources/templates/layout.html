@@ -132,6 +132,21 @@
                     </ul>
                 </li>
 
+                <!-- Connectors -->
+                <li class="nav-item nav-dropdown">
+                    <a class="nav-link nav-dropdown-toggle" th:href="@{/connector}">
+                        <i class="icon-layers"></i> Connectors
+                    </a>
+                    <ul class="nav-dropdown-items">
+                        <li class="nav-item" th:each="connector : ${MenuConnector}" th:title="${connector.name}">
+                            <a class="nav-link" th:href="@{/connector/{id}(id=${connector.id})}">
+                                <i class="icon-layers"></i>
+                                [[${connector.name}]]
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Views -->
                 <li class="nav-item nav-dropdown">
                     <a class="nav-link nav-dropdown-toggle" th:href="@{/view}">

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `cluster` (
                                        id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
                                        name VARCHAR(255) UNIQUE NOT NULL,
                                        broker_hosts TEXT NOT NULL,
+                                       connector_hosts TEXT,
                                        is_ssl_enabled BOOLEAN DEFAULT FALSE NOT NULL,
                                        trust_store_file TEXT DEFAULT NULL,
                                        trust_store_password TEXT DEFAULT NULL,
@@ -106,4 +107,14 @@ CREATE TABLE IF NOT EXISTS `view_to_filter_optional` (
                                                        UNIQUE KEY (filter_id, view_id),
                                                        FOREIGN KEY (filter_id) REFERENCES filter(id),
                                                        FOREIGN KEY (view_id) REFERENCES view(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `connector` (
+                                    id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+                                    name VARCHAR(255) UNIQUE NOT NULL,
+                                    plugin VARCHAR(255) UNIQUE NOT NULL,
+                                    task INT(11) UNSIGNED NOT NULL DEFAULT 0,
+                                    cluster_id INT(11) UNSIGNED NOT NULL,
+                                    PRIMARY KEY (id),
+                                    FOREIGN KEY (cluster_id) REFERENCES cluster(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

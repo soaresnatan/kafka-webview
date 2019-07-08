@@ -27,8 +27,10 @@ package org.sourcelab.kafka.webview.ui.controller;
 import org.sourcelab.kafka.webview.ui.configuration.AppProperties;
 import org.sourcelab.kafka.webview.ui.manager.user.CustomUserDetails;
 import org.sourcelab.kafka.webview.ui.model.Cluster;
+import org.sourcelab.kafka.webview.ui.model.Connector;
 import org.sourcelab.kafka.webview.ui.model.View;
 import org.sourcelab.kafka.webview.ui.repository.ClusterRepository;
+import org.sourcelab.kafka.webview.ui.repository.ConnectorRepository;
 import org.sourcelab.kafka.webview.ui.repository.ViewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -48,6 +50,9 @@ public abstract class BaseController {
 
     @Autowired
     private ClusterRepository clusterRepository;
+
+    @Autowired
+    private ConnectorRepository connectorRepository;
 
     @Autowired
     private ViewRepository viewRepository;
@@ -107,9 +112,11 @@ public abstract class BaseController {
 
         // TODO put a limit on these
         final Iterable<Cluster> clusters = clusterRepository.findAllByOrderByNameAsc();
+        final Iterable<Connector> connectors = connectorRepository.findAllByOrderByNameAsc();
         final Iterable<View> views = viewRepository.findAllByOrderByNameAsc();
 
         model.addAttribute("MenuClusters", clusters);
+        model.addAttribute("MenuConnectors", connectors);
         model.addAttribute("MenuViews", views);
         model.addAttribute("UserId", getLoggedInUserId());
 

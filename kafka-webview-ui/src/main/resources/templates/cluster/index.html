@@ -28,6 +28,7 @@
                             <thead>
                             <tr>
                                 <th>Cluster</th>
+                                <th>Connectors</th>
                                 <th>Views</th>
                                 <th>SSL</th>
                             </tr>
@@ -36,6 +37,10 @@
                             <tr th:each="cluster : ${clusterList}">
                                 <td>
                                     <a th:href="@{/cluster/{id}(id=${cluster.id})}" th:text="${cluster.name}"></a>
+                                </td>
+                                <td>
+                                    <a th:href="@{/connector?clusterId={id}(id=${cluster.id})}"
+                                       th:text="${connectorsByClusterId.get(cluster.getId())} + ' Connectors'"></a>
                                 </td>
                                 <td>
                                     <a th:href="@{/view?clusterId={id}(id=${cluster.id})}" th:text="${viewsByClusterId.get(cluster.getId())} + ' Views'"></a>

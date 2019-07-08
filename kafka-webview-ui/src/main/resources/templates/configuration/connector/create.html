@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html
+        layout:decorate="~{layout}"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>View Configuration</title>
+</head>
+
+<body>
+<section layout:fragment="content">
+    <div class="container">
+        <script type="application/javascript">
+            // On ready register handlers
+            jQuery(document).ready(function () {
+
+                // Handle selecting a cluster.
+                jQuery('#clusterId').change(function () {
+                    var clusterId = jQuery('#clusterId').val();
+                    ApiClient.getPlugins(clusterId, function (pluginList) {
+                        var pluginSelector = jQuery('#connector');
+                        jQuery(pluginSelector).empty();
+                        jQuery(pluginSelector).removeAttr('disabled');
+                        jQuery(pluginSelector).append(jQuery('<option></option>')
+                            .attr('value', '!')
+                            .text('Please select a Plugin')
+                        );
+                        jQuery.each(pluginList, function (index, plugin) {
+                            jQuery(pluginSelector)
+                                .append(
+                                    jQuery('<option></option>')
+                                        .attr('value', plugin.name)
+                                        .text(plugin.name)
+                                );
+                        });
+                    });
+                });
+
+                // Handle selecting a plugin
+                jQuery('#connector').change(function () {
+                    var plugin = jQuery(this).val();
+                    if (plugin === '!') {
+                        // Clear partitions
+                        return
+                    }
+                    var clusterId = jQuery('#clusterId').val();
+                    var plugin = jQuery('#connector').val();
+
+                    ApiClient.getPluginDetails(clusterId, plugin, function (results) {
+                        // var partitionSelector = jQuery('#partitions');
+                        // jQuery(partitionSelector).empty();
+                        // jQuery(partitionSelector).removeAttr('disabled');
+                        // jQuery(partitionSelector).append(jQuery('<option></option>')
+                        //     .attr('value', '')
+                        //     .text('View all partitions')
+                        //     .attr('selected', 'selected')
+                        // );
+                        //
+                        jQuery.each(results, function (index, result) {
+                            console.log(result.name);
+                            // jQuery(partitionSelector)
+                            //     .append(
+                            //         jQuery('<option></option>')
+                            //             .attr('value', result.partition)
+                            //             .text(result.partition)
+                            //     );
+                        });
+                    });
+                });
+            });
+        </script>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <strong th:text="${connectorForm.exists()} ? 'Edit Connector' : 'Create'">Create</strong>
+                        <span th:text="${connectorForm.exists()} ? ${connectorForm.name} : 'New Connector'"></span>
+                    </div>
+                    <form class="form-horizontal" method="post"
+                          th:action="@{/configuration/connector/update}"
+                          th:object="${connectorForm}">
+
+                        <div class="card-body">
+                            <!-- Topic Options -->
+                            <h6>Connector Selection</h6>
+                            <hr>
+
+                            <!-- Name -->
+                            <div class="form-group row">
+                                <label class="col-md-3 form-control-label" for="name">
+                                    Connector Name
+                                </label>
+                                <div class="col-md-9">
+                                    <input
+                                            class="form-control" id="name" name="name"
+                                            placeholder="A unique name to identify this view"
+                                            th:errorclass="is-invalid"
+                                            th:value="*{name}"
+                                            type="text">
+                                    <div class="invalid-feedback" th:errors="*{name}"
+                                         th:if="${#fields.hasErrors('name')}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Cluster -->
+                            <div class="form-group row">
+                                <label class="col-md-3 form-control-label" for="clusterId">
+                                    Cluster
+                                </label>
+                                <div class="col-md-9">
+                                    <select
+                                            class="form-control" id="clusterId" name="clusterId"
+                                            th:errorclass="is-invalid"
+                                            th:field="*{clusterId}">
+                                        <option value="">Please select a cluster</option>
+                                        <option th:each="cluster : ${clusters}"
+                                                th:text="${cluster.name}" th:value="${cluster.id}">Cluster Name
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:errors="*{clusterId}"
+                                         th:if="${#fields.hasErrors('clusterId')}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Connector -->
+                            <div class="form-group row">
+                                <label class="col-md-3 form-control-label" for="connector">
+                                    Connector
+                                </label>
+                                <div class="col-md-9">
+                                    <select
+                                            class="form-control" id="connector" name="connector"
+                                            th:attr="disabled=${plugins.isEmpty()}? 'disabled'"
+                                            th:errorclass="is-invalid"
+                                            th:field="*{connector}">
+                                        <option value="!">Please select a Connector</option>
+                                        <option th:each="plugin : ${plugins}" th:if="${plugins} != null"
+                                                th:text="${plugin.name}" th:value="${plugin.name}">Plugin Name
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:errors="*{connector}"
+                                         th:if="${#fields.hasErrors('connector')}"></div>
+                                </div>
+                            </div>
+
+                            <!--                            Create form from plugin -->
+
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="card-footer">
+                            <input name="id" th:field="*{id}" th:if="${connectorForm.exists()}" type="hidden"></input>
+                            <button class="btn btn-sm btn-primary" type="submit">
+                                <i class="fa fa-dot-circle-o"></i>
+                                Submit
+                            </button>
+                            <a class="btn btn-sm btn-danger" role="button" th:href="@{/configuration/connector}">
+                                <i class="fa fa-ban"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

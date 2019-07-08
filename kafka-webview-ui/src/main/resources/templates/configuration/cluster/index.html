@@ -30,6 +30,7 @@
                             <tr>
                                 <th>Cluster Name</th>
                                 <th>Brokers</th>
+                                <th>Connectors</th>
                                 <th>SSL Enabled</th>
                                 <th>SASL Enabled</th>
                                 <th>Status</th>
@@ -45,6 +46,7 @@
                                 <tr th:each="cluster : ${clusterList}">
                                     <td th:text="${cluster.name}"></td>
                                     <td th:text="${cluster.brokerHosts}"></td>
+                                    <td th:text="${cluster.connectorHosts}"></td>
                                     <td>
                                         <span
                                             th:if="${cluster.isSslEnabled()}"

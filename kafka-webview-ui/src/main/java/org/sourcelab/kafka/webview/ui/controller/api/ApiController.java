@@ -27,34 +27,11 @@ package org.sourcelab.kafka.webview.ui.controller.api;
 import org.sourcelab.kafka.webview.ui.controller.BaseController;
 import org.sourcelab.kafka.webview.ui.controller.api.exceptions.ApiException;
 import org.sourcelab.kafka.webview.ui.controller.api.exceptions.NotFoundApiException;
-import org.sourcelab.kafka.webview.ui.controller.api.requests.ConsumeRequest;
-import org.sourcelab.kafka.webview.ui.controller.api.requests.ConsumerRemoveRequest;
-import org.sourcelab.kafka.webview.ui.controller.api.requests.CreateTopicRequest;
-import org.sourcelab.kafka.webview.ui.controller.api.requests.DeleteTopicRequest;
-import org.sourcelab.kafka.webview.ui.controller.api.requests.ModifyTopicConfigRequest;
+import org.sourcelab.kafka.webview.ui.controller.api.requests.*;
 import org.sourcelab.kafka.webview.ui.controller.api.responses.ResultResponse;
-import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperations;
-import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperationsFactory;
-import org.sourcelab.kafka.webview.ui.manager.kafka.SessionIdentifier;
-import org.sourcelab.kafka.webview.ui.manager.kafka.ViewCustomizer;
-import org.sourcelab.kafka.webview.ui.manager.kafka.WebKafkaConsumer;
-import org.sourcelab.kafka.webview.ui.manager.kafka.WebKafkaConsumerFactory;
+import org.sourcelab.kafka.webview.ui.manager.kafka.*;
 import org.sourcelab.kafka.webview.ui.manager.kafka.config.FilterDefinition;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ApiErrorResponse;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConfigItem;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupIdentifier;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupOffsets;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerGroupOffsetsWithTailPositions;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConsumerState;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.CreateTopic;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.KafkaResults;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.NodeDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.NodeList;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PartitionDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicDetails;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicList;
-import org.sourcelab.kafka.webview.ui.manager.kafka.dto.TopicListing;
+import org.sourcelab.kafka.webview.ui.manager.kafka.dto.*;
 import org.sourcelab.kafka.webview.ui.model.Cluster;
 import org.sourcelab.kafka.webview.ui.model.Filter;
 import org.sourcelab.kafka.webview.ui.model.View;
@@ -65,24 +42,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Handles API requests.
@@ -265,6 +227,46 @@ public class ApiController extends BaseController {
             throw new ApiException("TopicDetails", e);
         }
     }
+
+    /**
+     * GET listing of all available kafka topics for a requested cluster.
+     */
+    @ResponseBody
+    @RequestMapping(path = "/cluster/{id}/plugins/list", method = RequestMethod.GET, produces = "application/json")
+    public List<PluginDetails> getPlugins(@PathVariable final Long id, @RequestParam(required = false) final String search) {
+        // Retrieve cluster
+        final Cluster cluster = retrieveClusterById(id);
+
+        // Create new Operational Client
+        try (final KafkaOperations operations = createOperationsClient(cluster)) {
+            // Get all topics available on cluster.
+            PluginList pluginList = operations.getAvailablePlugins(cluster.getConnectorHosts());
+
+            // return matched topics.
+            return pluginList.getPlugins();
+        } catch (final Exception e) {
+            throw new ApiException("Connectors", e);
+        }
+    }
+
+    /**
+     * GET Details for a specific Topic.
+     */
+    @ResponseBody
+    @RequestMapping(path = "/cluster/{id}/plugin/{plugin}/details", method = RequestMethod.GET, produces = "application/json")
+    public PluginDetails getPluginDetails(@PathVariable final Long id, @PathVariable final String plugin) {
+        // Retrieve cluster
+        final Cluster cluster = retrieveClusterById(id);
+
+        // Create new Operational Client
+        try (final KafkaOperations operations = createOperationsClient(cluster)) {
+            PluginList pluginList = operations.getAvailablePlugins(cluster.getConnectorHosts());
+            return operations.getPluginDetails(pluginList, plugin);
+        } catch (final Exception e) {
+            throw new ApiException("PluginDetails", e);
+        }
+    }
+
 
     /**
      * GET Config for a specific Topic.
