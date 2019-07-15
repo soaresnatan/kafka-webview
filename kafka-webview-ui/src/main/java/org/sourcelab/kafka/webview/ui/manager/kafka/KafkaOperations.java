@@ -31,7 +31,10 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
+import org.sourcelab.kafka.connect.apiclient.request.dto.Task;
+import org.sourcelab.kafka.webview.ui.controller.configuration.connector.forms.ConnectorForm;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.*;
+import org.sourcelab.kafka.webview.ui.model.Cluster;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -42,8 +45,8 @@ import java.util.stream.Collectors;
  * against a cluster, or retrieving metadata about a cluster.
  */
 public class KafkaOperations implements AutoCloseable {
-    private final AdminClient adminClient;
-    private final KafkaConsumer<String, String> consumerClient;
+    private AdminClient adminClient;
+    private KafkaConsumer<String, String> consumerClient;
     private KafkaConnect kafkaConnect;
 
     /**
@@ -54,24 +57,81 @@ public class KafkaOperations implements AutoCloseable {
     public KafkaOperations(final AdminClient adminClient, final KafkaConsumer<String, String> consumerClient) {
         this.adminClient = adminClient;
         this.consumerClient = consumerClient;
+        this.kafkaConnect = new KafkaConnect();
+    }
+
+    public KafkaOperations() {
+        this.kafkaConnect = new KafkaConnect();
     }
 
     public PluginList getAvailablePlugins(String host) {
-        kafkaConnect = new KafkaConnect(host);
+        kafkaConnect.connect(host);
 
         return new PluginList(kafkaConnect.getConnectorPlugins());
-    }
-
-    public boolean addConnector(String host, String name, Map<String, String> map) {
-        kafkaConnect = new KafkaConnect(host);
-
-        return kafkaConnect.addConnector(name, map);
-
     }
 
     public PluginDetails getPluginDetails(PluginList pluginList, String plugin) {
         PluginDetails pluginDetails = pluginList.getPlugin(plugin);
         return pluginDetails;
+    }
+
+    public PluginDetails getPluginDetails(Cluster cluster, String className) {
+        kafkaConnect.connect(cluster.getConnectorHosts());
+
+        return kafkaConnect.getPlugin(className);
+    }
+
+    public Collection<Task> getTasksInfo(Cluster cluster, String connectorName) {
+        kafkaConnect.connect(cluster.getConnectorHosts());
+
+        return kafkaConnect.getConnectorTasks(connectorName);
+    }
+
+    public Boolean restartConnectorTask(String host, String connectorName, int taskId) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.restartConnectorTask(connectorName, taskId);
+    }
+
+    public ConnectorForm updateConnector(long clusterId, String host, Map<String, String> map) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.updateConnector(clusterId, map);
+    }
+
+    public ConnectorForm addConnector(long clusterId, String host, Map<String, String> map) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.addConnector(clusterId, map);
+    }
+
+    public Boolean removeConnector(String host, String connectorName) {
+        kafkaConnect.connect(host);
+        return kafkaConnect.deleteConnector(connectorName);
+    }
+
+    public ConnectorInfo getConnector(Cluster cluster, String name) {
+        kafkaConnect.connect(cluster.getConnectorHosts());
+
+        return kafkaConnect.getConnector(cluster, name);
+    }
+
+    public boolean pauseConnector(String host, String connectorName) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.pauseConnector(connectorName);
+    }
+
+    public boolean resumeConnector(String host, String connectorName) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.resumeConnector(connectorName);
+    }
+
+    public boolean restartConnector(String host, String connectorName) {
+        kafkaConnect.connect(host);
+
+        return kafkaConnect.restartConnector(connectorName);
     }
 
     /**

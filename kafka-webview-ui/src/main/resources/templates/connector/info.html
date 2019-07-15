@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html
+        layout:decorate="~{layout}"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+        xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Connector Explorer</title>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
+</head>
+
+<body>
+<section layout:fragment="content">
+    <div class="container">
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-align-justify"></i>
+                        Connector <strong th:text="${connectorInfo.connectorDefinition.name}"></strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead>
+                            <tr>
+                                <th style="width:20%">Cluster</th>
+                                <th>Host</th>
+                                <th>Type</th>
+                                <th>Tasks</th>
+                                <th>Status</th>
+                                <th class="text-right" style="width:15%">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>
+                                    <a th:href="@{/cluster/{id}(id=${connectorInfo.cluster.id})}"
+                                       th:text="${connectorInfo.cluster.name}"></a>
+                                </td>
+                                <td th:text="${connectorInfo.cluster.connectorHosts}"></td>
+                                <td th:text="${connectorInfo.connectorDefinition.type}"></td>
+                                <td th:text="${connectorInfo.connectorStatus.tasks.size()}"></td>
+                                <td th:text="${connectorInfo.connectorStatus.connector['state']}"></td>
+
+                                <td class="text-right">
+                                    <div class="dropdown">
+                                        <button aria-expanded="false" aria-haspopup="true"
+                                                class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown"
+                                                id="dropdownMenuButton" type="button">
+                                            Actions
+                                        </button>
+                                        <div aria-labelledby="dropdownMenuButton" class="dropdown-menu">
+                                            <form method="post"
+                                                  th:action="@{/configuration/connector/{id}/restart(id=${connectorInfo.connectorDefinition.name})}">
+                                                <button class="dropdown-item" onclick="return confirm('Are you sure?');"
+                                                        type="submit">
+                                                    <i class="fa fa-refresh"></i>
+                                                    Restart
+                                                </button>
+                                            </form>
+
+                                            <div th:switch="${connectorInfo.connectorStatus.connector['state']}">
+                                                <form method="post"
+                                                      th:action="@{/configuration/connector/{connectorId}/pause(connectorId=${connectorInfo.connectorDefinition.name})}"
+                                                      th:case="RUNNING">
+                                                    <button class="dropdown-item"
+                                                            onclick="return confirm('Are you sure?');" type="submit">
+                                                        <i class="fa fa-pause"></i>
+                                                        Pause
+                                                    </button>
+                                                </form>
+                                                <form method="post"
+                                                      th:action="@{/configuration/connector/{connectorId}/resume(connectorId=${connectorInfo.connectorDefinition.name})}"
+                                                      th:case="PAUSED">
+                                                    <button class="dropdown-item"
+                                                            onclick="return confirm('Are you sure?');" type="submit">
+                                                        <i class="fa fa-step-backward"></i>
+                                                        Resume
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-align-justify"></i>
+                        Tasks
+                    </div>
+                    <div class="card-body">
+
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead>
+                            <tr>
+                                <th style="width:20%">Id</th>
+                                <th>WorkId</th>
+                                <th>Status</th>
+                                <th class="text-right" style="width:15%">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr align="center" th:if="${connectorInfo.connectorStatus.tasks.isEmpty()}">
+                                <td colspan="4">
+                                    No Tasks found!
+                                </td>
+                            </tr>
+                            <tr th:each="task : ${connectorInfo.connectorStatus.tasks}">
+                                <td th:text="${task.id}"></td>
+                                <td th:text="${task.workerId}"></td>
+                                <td th:text="${task.state}"></td>
+
+
+                                <td class="text-right">
+                                    <div class="dropdown">
+                                        <button aria-expanded="false" aria-haspopup="true"
+                                                class="btn btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown"
+                                                id="dropdownMenuButton" type="button">
+                                            Actions
+                                        </button>
+                                        <div aria-labelledby="dropdownMenuButton" class="dropdown-menu">
+                                            <form method="post"
+                                                  th:action="@{/configuration/connector/{connectorId}/task/{taskId}/restart(taskId=${task.id}, connectorId=${connectorInfo.connectorDefinition.name})}">
+                                                <button class="dropdown-item" onclick="return confirm('Are you sure?');"
+                                                        type="submit">
+                                                    <i class="fa fa-refresh"></i>
+                                                    Restart
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-align-justify"></i>
+                        Configuration
+                    </div>
+                    <div class="card-body">
+
+                        <table class="table table-bordered table-striped table-sm">
+                            <thead>
+                            <tr>
+                                <th style="width:20%">Option</th>
+                                <th style="width:70%">Value</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="config : ${connectorInfo.connectorDefinition.config}">
+                                <td style="word-break:break-all;" th:text="${config.key}"></td>
+                                <td style="word-break:break-all;" th:text="${config.value}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+</body>
+</html>

@@ -110,11 +110,8 @@ CREATE TABLE IF NOT EXISTS `view_to_filter_optional` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `connector` (
-                                    id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
                                     name VARCHAR(255) UNIQUE NOT NULL,
-                                    plugin VARCHAR(255) UNIQUE NOT NULL,
-                                    task INT(11) UNSIGNED NOT NULL DEFAULT 0,
                                     cluster_id INT(11) UNSIGNED NOT NULL,
-                                    PRIMARY KEY (id),
+                                    PRIMARY KEY (name),
                                     FOREIGN KEY (cluster_id) REFERENCES cluster(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

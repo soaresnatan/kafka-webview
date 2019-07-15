@@ -14,7 +14,7 @@ public class PluginList {
     public PluginList(List<PluginDetails> plugins) {
         final List<PluginDetails> sortedList = new ArrayList<>();
         sortedList.addAll(plugins);
-        Collections.sort(sortedList, Comparator.comparing(PluginDetails::getName));
+        Collections.sort(sortedList, Comparator.comparing(PluginDetails::getNamePlugin));
 
         this.plugins = Collections.unmodifiableList(sortedList);
     }
@@ -32,13 +32,13 @@ public class PluginList {
     public List<String> getPluginsNames() {
         final List<String> pluginNames = new ArrayList<>();
         for (final PluginDetails pluginDetail : getPlugins()) {
-            pluginNames.add(pluginDetail.getName());
+            pluginNames.add(pluginDetail.getNamePlugin());
         }
         return Collections.unmodifiableList(pluginNames);
     }
 
     public PluginDetails getPlugin(String plugin) {
-        return this.plugins.stream().filter(pluginT -> pluginT.getId().equals(plugin)).findAny().orElse(null);
+        return this.plugins.stream().filter(pluginT -> pluginT.getNameClass().equals(plugin)).findAny().orElse(null);
     }
 
     @Override

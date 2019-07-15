@@ -11,18 +11,10 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Connector {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
 
+    @Id
     @Column(nullable = false, unique = true)
     private String name;
-
-    @Column(nullable = false)
-    private String plugin;
-
-    @Column(nullable = false)
-    private int task;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Cluster cluster;

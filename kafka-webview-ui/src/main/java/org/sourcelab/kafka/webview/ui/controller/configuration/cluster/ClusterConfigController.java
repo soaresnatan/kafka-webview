@@ -134,6 +134,7 @@ public class ClusterConfigController extends BaseController {
         clusterForm.setId(cluster.getId());
         clusterForm.setName(cluster.getName());
         clusterForm.setBrokerHosts(cluster.getBrokerHosts());
+        clusterForm.setConnectorHosts(cluster.getConnectorHosts());
 
         // Set SSL options
         clusterForm.setSsl(cluster.isSslEnabled());

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html
+        layout:decorate="~{layout}"
+        xmlns="http://www.w3.org/1999/html"
+        xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Connector Configuration</title>
+</head>
+
+<body>
+<section layout:fragment="content">
+    <div class="container">
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa fa-align-justify"></i>
+                        Edit <strong th:text="${connectorForm.name}"></strong> connector
+                    </div>
+                    <form class="form-horizontal" method="post"
+                          th:action="@{/configuration/connector/update}"
+                          th:object="${connectorForm}">
+
+
+                        <div class="card-body">
+                            <div class="form-group row"
+                                 th:each="config : ${pluginDetails.configValidationResults.configs}">
+                                <label class="col-md-3 form-control-label" th:for="${config.definition.name}">
+                                    [[${config.definition.displayName}]]
+                                </label>
+                                <div class="col-md-9">
+                                    <input
+                                            class="form-control" th:id="${config.definition.name}"
+                                            th:name="${config.definition.name}"
+                                            th:placeholder="${connectorForm.configuration[config.definition.name]} ? ${connectorForm.configuration[config.definition.name]} : ${config.definition.documentation}"
+                                            th:readonly="${config.definition.name} == 'connector.class' or  ${config.definition.name} == 'name' ? 'true' : 'false'"
+                                            th:required="${config.definition.required} ? 'true' : 'false'"
+                                            th:style="${connectorForm.configuration[config.definition.name]} ? 'font-weight:bold;' : ''"
+                                            th:value="${connectorForm.configuration[config.definition.name]} ? ${connectorForm.configuration[config.definition.name]} : ''"
+                                            type="text">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="card-footer">
+                            <input name="id" th:field="*{id}" th:if="${connectorForm.exists()}" type="hidden"></input>
+                            <button class="btn btn-sm btn-primary" type="submit">
+                                <i class="fa fa-dot-circle-o"></i>
+                                Submit
+                            </button>
+                            <a class="btn btn-sm btn-danger" role="button" th:href="@{/configuration/connector}">
+                                <i class="fa fa-ban"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

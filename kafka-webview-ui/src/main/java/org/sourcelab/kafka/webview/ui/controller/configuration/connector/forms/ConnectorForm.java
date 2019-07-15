@@ -24,8 +24,12 @@
 
 package org.sourcelab.kafka.webview.ui.controller.configuration.connector.forms;
 
+import org.sourcelab.kafka.connect.apiclient.request.dto.ConnectorPluginConfigValidationResults;
+import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginErros;
+
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.util.Map;
 
 /**
  * Represents the Create/Update Connector Form.
@@ -40,11 +44,50 @@ public class ConnectorForm {
     @NotNull(message = "Select a cluster")
     private Long clusterId;
 
-    @NotNull(message = "Select a description")
-    private Long description;
-
     @NotNull(message = "Select a connector")
     private String connector;
+
+    private ConnectorPluginConfigValidationResults options;
+
+    private Map<String, String> configuration;
+
+    private PluginErros erros;
+
+    public ConnectorForm() {
+    }
+
+    public ConnectorForm(String name, Long clusterId, String connector, ConnectorPluginConfigValidationResults options, Map<String, String> configuration, PluginErros erros) {
+        this.name = name;
+        this.clusterId = clusterId;
+        this.connector = connector;
+        this.options = options;
+        this.configuration = configuration;
+        this.erros = erros;
+    }
+
+    public PluginErros getErros() {
+        return erros;
+    }
+
+    public void setErros(PluginErros erros) {
+        this.erros = erros;
+    }
+
+    public ConnectorPluginConfigValidationResults getOptions() {
+        return options;
+    }
+
+    public void setOptions(ConnectorPluginConfigValidationResults options) {
+        this.options = options;
+    }
+
+    public Map<String, String> getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(Map<String, String> configuration) {
+        this.configuration = configuration;
+    }
 
     public Long getId() {
         return id;
@@ -70,13 +113,6 @@ public class ConnectorForm {
         this.clusterId = clusterId;
     }
 
-    public Long getDescription() {
-        return description;
-    }
-
-    public void setDescription(Long description) {
-        this.description = description;
-    }
 
     public String getConnector() {
         return connector;
@@ -96,7 +132,6 @@ public class ConnectorForm {
                 + "id=" + id
                 + ", name='" + name + '\''
                 + ", clusterId=" + clusterId
-                + ", description=" + description
                 + ", connector=" + connector
                 + '}';
     }

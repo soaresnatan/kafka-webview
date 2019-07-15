@@ -1,6 +1,10 @@
 package org.sourcelab.kafka.webview.ui.controller.connector;
 
+import org.sourcelab.kafka.webview.ui.controller.BaseController;
+import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperations;
+import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConnectorInfo;
 import org.sourcelab.kafka.webview.ui.manager.ui.BreadCrumbManager;
+import org.sourcelab.kafka.webview.ui.manager.ui.FlashMessage;
 import org.sourcelab.kafka.webview.ui.model.Cluster;
 import org.sourcelab.kafka.webview.ui.model.Connector;
 import org.sourcelab.kafka.webview.ui.repository.ClusterRepository;
@@ -8,16 +12,17 @@ import org.sourcelab.kafka.webview.ui.repository.ConnectorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @RequestMapping("/connector")
-public class ConnectorController {
+public class ConnectorController extends BaseController {
 
     @Autowired
     private ClusterRepository clusterRepository;
@@ -42,18 +47,27 @@ public class ConnectorController {
                 .findAllByOrderByNameAsc()
                 .forEach((cluster) -> clustersById.put(cluster.getId(), cluster));
 
-        final Iterable<Connector> connectors;
+        final Iterable<Connector> connectorList;
         if (clusterId == null) {
             // Retrieve all views order by name asc.
-            connectors = connectorRepository.findAllByOrderByNameAsc();
+            connectorList = connectorRepository.findAllByOrderByNameAsc();
         } else {
             // Retrieve only views for the cluster
-            connectors = connectorRepository.findAllByClusterIdOrderByNameAsc(clusterId);
+            connectorList = connectorRepository.findAllByClusterIdOrderByNameAsc(clusterId);
+        }
+
+        KafkaOperations operations = new KafkaOperations();
+
+        List<ConnectorInfo> connectorsInfos = new ArrayList<>();
+        for (Iterator it = connectorList.iterator(); it.hasNext(); ) {
+            Connector connector = (Connector) it.next();
+
+            connectorsInfos.add(operations.getConnector(connector.getCluster(), connector.getName()));
         }
 
         // Set model Attributes
-        model.addAttribute("connectorList", connectors);
         model.addAttribute("clustersById", clustersById);
+        model.addAttribute("connectorsInfos", connectorsInfos);
 
         final String clusterName;
         if (clusterId != null && clustersById.containsKey(clusterId)) {
@@ -75,38 +89,44 @@ public class ConnectorController {
 
         return "connector/index";
     }
-//
-//    /**
-//     * GET Displays view for specified view.
-//     */
-//    @RequestMapping(path = "/{id}", method = RequestMethod.GET)
-//    public String index(
-//            @PathVariable final Long id,
-//            final RedirectAttributes redirectAttributes,
-//            final Model model) {
-//
-//        // Retrieve the view
-//        final Optional<View> viewOptional = viewRepository.findById(id);
-//        if (!viewOptional.isPresent()) {
-//            // Set flash message
-//            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find view!"));
-//
-//            // redirect to home
-//            return "redirect:/";
-//        }
-//        final View view = viewOptional.get();
-//
-//        // Setup breadcrumbs
-//        new BreadCrumbManager(model)
-//                .addCrumb("View", "/view")
-//                .addCrumb(view.getName());
-//
-//        // Set model Attributes
-//        model.addAttribute("view", view);
-//        model.addAttribute("cluster", view.getCluster());
-//
-//        return "view/consume";
-//    }
 
+
+    /**
+     * GET Displays view for specified view.
+     */
+    @RequestMapping(path = "/{connectorName}", method = RequestMethod.GET)
+    public String index(
+            @PathVariable final String connectorName,
+            final RedirectAttributes redirectAttributes,
+            final Model model) {
+
+        // Retrieve the connector
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorName));
+        if (!connectorOptional.isPresent()) {
+            // Set flash message
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            // redirect to home
+            return "redirect:/";
+        }
+
+        Connector connector = connectorOptional.get();
+
+        // Setup breadcrumbs
+        new BreadCrumbManager(model)
+                .addCrumb("Connector", "/connector")
+                .addCrumb(connector.getName());
+
+
+        Cluster cluster = connector.getCluster();
+        KafkaOperations operations = new KafkaOperations();
+        ConnectorInfo connectorInfo = operations.getConnector(cluster, connector.getName());
+
+        // Set model Attributes
+        model.addAttribute("connectorInfo", connectorInfo);
+        model.addAttribute("cluster", cluster);
+
+        return "connector/info";
+    }
 
 }

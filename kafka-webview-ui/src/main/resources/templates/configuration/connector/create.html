@@ -30,8 +30,8 @@
                             jQuery(pluginSelector)
                                 .append(
                                     jQuery('<option></option>')
-                                        .attr('value', plugin.id)
-                                        .text(plugin.name)
+                                        .attr('value', plugin.nameClass)
+                                        .text(plugin.namePlugin)
                                 );
                         });
                     });
@@ -46,22 +46,47 @@
                         form.empty();
                     }
                     var clusterId = jQuery('#clusterId').val();
-                    var plugin = jQuery('#connector').val();
 
                     form.empty();
                     ApiClient.getPluginDetails(clusterId, plugin, function (results) {
-                        console.log(results);
-
                         jQuery.each(results.configValidationResults.configs, function (index, plugin) {
+                            var required = "";
+                            var block = "";
+                            var value = "";
+                            var type = plugin.definition.type;
+                            var name = plugin.definition.name;
+                            var placeholder = plugin.definition.documentation;
 
-                            var labelField = '<label class="col-md-3 form-control-label" for="' + plugin.definition.name + '">' + plugin.definition.displayName + '</label>';
+                            if (name == "connector.class") {
+                                block = 'readonly="readonly"';
+                                // placeholder = plugin.value.value;
+                                value = 'value="' + plugin.value.value + '"';
+                            }
+
+                            if (plugin.definition.required) {
+                                required = "required";
+                            }
+
+                            switch (type) {
+                                case "INT":
+                                    type = 'number';
+                                    break;
+
+                                case "STRING":
+                                    type = 'text';
+                                    break;
+                            }
+
+                            var labelField = '<label class="col-md-3 form-control-label" for="' + plugin.definition.name + '">' + plugin.definition.displayName + ' </label>\n';
                             var valueField = '<div class="col-md-9"> <input class="form-control" ' +
-                                'type="' + plugin.definition.type + '" ' +
-                                'name="connectorConfig.' + plugin.definition.name + '" ' +
-                                'id="connectorConfig.' + plugin.definition.name + '" ' +
-                                'th:value="' + plugin.definition.defaultValue + '" ' +
-                                'placeholder="' + plugin.definition.documentation + ' "> </div>';
-                            var formField = '<div class="form-group row">' + labelField + valueField + '</div>';
+                                'name="' + name + '" ' +
+                                'id="' + name + '" ' +
+                                'type="' + type + '" ' +
+                                value + ' ' +
+                                required + ' ' +
+                                block + ' ' +
+                                'placeholder="' + placeholder + ' "> </div>\n';
+                            var formField = '<div class="form-group row"> ' + labelField + valueField + ' </div>';
 
                             jQuery(form).append(jQuery(formField));
 
@@ -120,7 +145,8 @@
                                             th:field="*{connector}">
                                         <option value="!">Please select a Plugin</option>
                                         <option th:each="plugin : ${plugins}" th:if="${plugins} != null"
-                                                th:text="${plugin.name}" th:value="${plugin.name}">Plugin Name
+                                                th:text="${plugin.namePlugin}" th:value="${plugin.namePlugin}">Plugin
+                                            Name
                                         </option>
                                     </select>
                                     <div class="invalid-feedback" th:errors="*{connector}"
@@ -132,7 +158,6 @@
                             <div id="formPlugin">
 
                             </div>
-
                         </div>
 
                         <!-- Footer -->

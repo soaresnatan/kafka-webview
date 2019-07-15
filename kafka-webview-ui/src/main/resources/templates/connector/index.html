@@ -6,7 +6,7 @@
         xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <title>Views</title>
+    <title>Connectors</title>
 </head>
 
 <body>
@@ -17,7 +17,7 @@
             <!-- Display no kafka clusters found -->
         </div>
 
-        <div class="row" th:if="${!clustersById.isEmpty()} and ${connectorList.isEmpty()}">
+        <div class="row" th:if="${!clustersById.isEmpty()} and ${connectorsInfos.isEmpty()}">
             <!-- No Views Found -->
             <div class="col-lg-12">
                 <div class="card">
@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="row" th:if="${not clustersById.isEmpty()} and ${not connectorList.isEmpty()}">
+        <div class="row" th:if="${not clustersById.isEmpty()} and ${not connectorsInfos.isEmpty()}">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-header" th:if="${clusterName != null}">
@@ -56,27 +56,28 @@
                             <thead>
                             <tr>
                                 <th>Connector</th>
-                                <th>Class</th>
-                                <th>Tasks</th>
                                 <th>Cluster</th>
-                                <th colspan="2"></th>
+                                <th>Class</th>
+                                <th>Type</th>
+                                <th>Tasks</th>
+                                <th>Status</th>
                             </tr>
                             </thead>
                             <tbody>
-                            <tr th:each="connector : ${connectorList}">
-                                <td th:text="${connector.name}"></td>
-                                <td th:text="${connector.plugin}"></td>
-                                <td th:text="${connector.tasks}"></td>
+                            <tr th:each="connector : ${connectorsInfos}">
+                                <td>
+                                    <a th:href="@{/connector/{id}(id=${connector.connectorDefinition.name})}"
+                                       th:text="${connector.connectorDefinition.name}"></a>
+                                </td>
+
                                 <td>
                                     <a th:href="@{/cluster/{id}(id=${connector.cluster.id})}"
-                                       th:text="${clustersById.get(connector.cluster.id).name}"></a>
+                                       th:text="${connector.cluster.name}"></a>
                                 </td>
-                                <td>
-                                    <a th:href="@{/view/{id}(id=${view.id})}">Browse</a>
-                                </td>
-                                <td>
-                                    <a th:href="@{/stream/{id}(id=${view.id})}">Stream</a>
-                                </td>
+                                <td th:text="${connector.connectorDefinition.config['connector.class']}"></td>
+                                <td th:text="${connector.connectorStatus.type}"></td>
+                                <td th:text="${connector.connectorStatus.tasks.size()}"></td>
+                                <td th:text="${connector.connectorStatus.connector['state']}"></td>
                             </tr>
                             </tbody>
                         </table>

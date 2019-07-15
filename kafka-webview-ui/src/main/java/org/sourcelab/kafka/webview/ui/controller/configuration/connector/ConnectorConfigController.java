@@ -28,6 +28,7 @@ import org.sourcelab.kafka.webview.ui.controller.BaseController;
 import org.sourcelab.kafka.webview.ui.controller.configuration.connector.forms.ConnectorForm;
 import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperations;
 import org.sourcelab.kafka.webview.ui.manager.kafka.KafkaOperationsFactory;
+import org.sourcelab.kafka.webview.ui.manager.kafka.dto.ConnectorInfo;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginDetails;
 import org.sourcelab.kafka.webview.ui.manager.kafka.dto.PluginList;
 import org.sourcelab.kafka.webview.ui.manager.ui.BreadCrumbManager;
@@ -40,14 +41,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Controller for CRUD over View entities.
@@ -75,7 +77,17 @@ public class ConnectorConfigController extends BaseController {
 
         // Retrieve all message formats
         final Iterable<Connector> connectorList = connectorRepository.findAllByOrderByNameAsc();
-        model.addAttribute("connectors", connectorList);
+        KafkaOperations operations = new KafkaOperations();
+
+        List<ConnectorInfo> connectorInfos = new ArrayList<>();
+        for (Iterator it = connectorList.iterator(); it.hasNext(); ) {
+            Connector connector = (Connector) it.next();
+
+            connectorInfos.add(operations.getConnector(connector.getCluster(), connector.getName()));
+        }
+
+
+        model.addAttribute("connectorsInfos", connectorInfos);
 
         return "configuration/connector/index";
     }
@@ -98,10 +110,13 @@ public class ConnectorConfigController extends BaseController {
         model.addAttribute("pluginsDetails", new ArrayList<>());
 
         if (connectorForm.getClusterId() != null) {
-            // Lets load the topics now
+
             // Retrieve cluster
             clusterRepository.findById(connectorForm.getClusterId()).ifPresent((cluster) -> {
                 try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+
+                    // ALTERAR PARA EDIT :)
+
                     // Get plugins
                     final PluginList plugins = operations.getAvailablePlugins(cluster.getConnectorHosts());
                     model.addAttribute("plugins", plugins.getPlugins());
@@ -109,7 +124,7 @@ public class ConnectorConfigController extends BaseController {
                     // If we have a selected topic
                     if (connectorForm.getConnector() != null && !"!".equals(connectorForm.getConnector())) {
                         final PluginDetails pluginDetails = operations.getPluginDetails(plugins, connectorForm.getConnector());
-                        model.addAttribute("pluginsDetails", pluginDetails);
+//                        model.addAttribute("pluginsDetails", connectorForm.getPlugin());
                     }
                 }
             });
@@ -129,80 +144,260 @@ public class ConnectorConfigController extends BaseController {
             final Model model,
             @RequestParam final Map<String, String> allRequestParams) {
 
-        // Determine if we're updating or creating
-//        final boolean updateExisting = connectorForm.exists();
-//
-//        // Ensure that cluster name is not alreadyx used.
-//        final Connector existingConnector = connectorRepository.findByName(connectorForm.getName());
-//        if (existingConnector != null) {
-//            // If we're updating, exclude our own id.
-//            if (!updateExisting
-//                    || (updateExisting && existingConnector.getId() != existingConnector.getId())) {
-//                bindingResult.addError(new FieldError(
-//                        "connectorForm", "name", connectorForm.getName(), true, null, null, "Name is already used")
-//                );
-//            }
-//        }
-//
-//        // If we have errors
-//        if (bindingResult.hasErrors()) {
-//            return createConnectorForm(connectorForm, model);
-//        }
-//
-//        // If we're updating
-//        final Connector connector;
-//        final String successMessage;
-//        if (updateExisting) {
-//            // Retrieve it
-//            final Optional<Connector> connectorOptional = connectorRepository.findById(connectorForm.getId());
-//            if (!connectorOptional.isPresent()) {
-//                // Set flash message and redirect
-//                redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
-//
-//                // redirect to view index
-//                return "redirect:/configuration/connector";
-//            }
-//            connector = connectorOptional.get();
-//
-//            successMessage = "Updated connector successfully!";
-//        } else {
-//            connector = new Connector();
-//            //connector.setCreatedAt(new Timestamp(System.currentTimeMillis())); Colocar Horario de criação
-//            successMessage = "Created new Connector!";
-//        }
 
-        Connector connector = new Connector();
-        //connector.setCreatedAt(new Timestamp(System.currentTimeMillis())); Colocar Horario de criação
-        String successMessage = "Created new Connector!";
+        final boolean updateExisting;
+        Connector connector = connectorRepository.findByName(connectorForm.getName());
+        Cluster cluster;
 
-        // Update properties
-        final Cluster cluster = clusterRepository.findById(connectorForm.getClusterId()).get();
+        if (connector == null) {
+            connector = new Connector();
 
-        connector.setName(connectorForm.getName());
-        connector.setCluster(cluster);
-        connector.setPlugin("x");
-        connector.setTask(1);
+            long clusterId = connectorForm.getClusterId();
+            cluster = clusterRepository.findById(clusterId).get();
 
-        boolean result = false;
-        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
-            result = operations.addConnector(cluster.getConnectorHosts(), connectorForm.getName(), allRequestParams);
+            connector.setName(connectorForm.getName());
+            connector.setCluster(cluster);
+
+            updateExisting = false;
+        } else {
+            if (!connectorForm.getConnector().isEmpty()) {
+                redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Connector already exists!"));
+
+                return "redirect:/configuration/connector/create";
+            }
+
+            cluster = connector.getCluster();
+            updateExisting = true;
         }
 
-        if (result) {
-            // Persist the connector
-            //connector.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
-            connectorRepository.save(connector);
+        ConnectorForm resultForm;
+        String successMessage;
+        try {
+            final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId());
+            resultForm = updateExisting ? operations.updateConnector(cluster.getId(), cluster.getConnectorHosts(), allRequestParams) : operations.addConnector(cluster.getId(), cluster.getConnectorHosts(), allRequestParams);
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger(e.getMessage()));
+
+            return "redirect:/configuration/connector";
+        }
+
+        if (!resultForm.getErros().haveErrors()) {
+
+            successMessage = "Connector Updated!";
+            if (!updateExisting) {
+                connectorRepository.save(connector);
+                successMessage = "Created new Connector!";
+            }
 
             // Set flash message
             redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess(successMessage));
+
+            return "redirect:/configuration/connector";
+
         } else {
             // Set flash message
-            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Error ..."));
+            for (String error : resultForm.getErros().getListErros()) {
+                for (String descptionError : resultForm.getErros().getErrors(error)) {
+                    FieldError errorField = new FieldError(error, error, descptionError);
+
+                    redirectAttributes.addFlashAttribute(FlashMessage.newDanger(descptionError));
+
+                }
+            }
+
+            return updateExisting ? "redirect:/configuration/connector/" : "redirect:/configuration/connector/create";
+        }
+    }
+
+    /**
+     * GET Displays edit cluster form.
+     */
+    @RequestMapping(path = "/{connectorId}/edit", method = RequestMethod.GET)
+    public String editClusterForm(
+            @PathVariable final String connectorId,
+            final ConnectorForm connectorForm,
+            final RedirectAttributes redirectAttributes,
+            final Model model) {
+
+        Optional<Connector> ConnectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+        if (!ConnectorOptional.isPresent()) {
+            // redirect
+            // Set flash message
+            final FlashMessage flashMessage = FlashMessage.newWarning("Unable to find Connector!");
+            redirectAttributes.addFlashAttribute("FlashMessage", flashMessage);
+
+            // redirect to cluster index
+            return "redirect:/configuration/connector";
+        }
+        final Connector connector = ConnectorOptional.get();
+
+        // Setup breadcrumbs
+        setupBreadCrumbs(model, "Edit: " + connector.getName(), null);
+
+
+        KafkaOperations operations = new KafkaOperations();
+        ConnectorInfo connectorInfo = operations.getConnector(connector.getCluster(), connector.getName());
+        PluginDetails pluginDetails = operations.getPluginDetails(connector.getCluster(), connectorInfo.getConnectorDefinition().getConfig().get("connector.class"));
+
+        connectorForm.setName(connector.getName());
+        connectorForm.setConfiguration(connectorInfo.getConnectorDefinition().getConfig());
+
+
+        model.addAttribute("connectorForm", connectorForm);
+        model.addAttribute("pluginDetails", pluginDetails);
+
+        // Display template
+        return "configuration/connector/edit";
+    }
+
+
+    @RequestMapping(path = "/{connectorId}/remove", method = RequestMethod.POST)
+    public String removeConnector(@PathVariable final String connectorId,
+                                  final RedirectAttributes redirectAttributes) {
+
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+
+        if (!connectorOptional.isPresent()) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            return "redirect:/";
         }
 
-        // redirect to cluster index
+        Connector connector = connectorOptional.get();
+        Cluster cluster = connector.getCluster();
+        boolean result = true;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.removeConnector(cluster.getConnectorHosts(), connector.getName());
+        }
+
+        if (result) {
+            connectorRepository.delete(connector);
+
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess("Connector " + connectorId + " removed"));
+        } else {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Connector " + connectorId + " not removed"));
+        }
+
         return "redirect:/configuration/connector";
     }
+
+    @RequestMapping(path = "/{connectorId}/task/{taskId}/restart", method = RequestMethod.POST)
+    public String restartTask(@PathVariable final int taskId,
+                              @PathVariable final String connectorId,
+                              final RedirectAttributes redirectAttributes) {
+
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+
+        if (!connectorOptional.isPresent()) {
+            // Set flash message
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            // redirect to home
+            return "redirect:/";
+        }
+
+        Connector connector = connectorOptional.get();
+        Cluster cluster = connector.getCluster();
+        boolean result = false;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.restartConnectorTask(cluster.getConnectorHosts(), connector.getName(), taskId);
+        }
+
+        if (result) {
+            // Set flash message
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess("Task " + taskId + " restarted"));
+        } else {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Task " + taskId + " not restarted"));
+        }
+
+        return "redirect:/connector/" + connectorId;
+    }
+
+    @RequestMapping(path = "/{connectorId}/restart", method = RequestMethod.POST)
+    public String restartConnector(@PathVariable final String connectorId,
+                                   final RedirectAttributes redirectAttributes) {
+
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+
+        if (!connectorOptional.isPresent()) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            return "redirect:/";
+        }
+
+        Connector connector = connectorOptional.get();
+        Cluster cluster = connector.getCluster();
+        boolean result = false;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.restartConnector(cluster.getConnectorHosts(), connector.getName());
+        }
+
+        if (result) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess("Connector " + connectorId + " restarted"));
+        } else {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Connector " + connectorId + " not restarted"));
+        }
+
+        return "redirect:/connector/" + connectorId;
+    }
+
+    @RequestMapping(path = "/{connectorId}/pause", method = RequestMethod.POST)
+    public String pauseConnector(@PathVariable final String connectorId,
+                                 final RedirectAttributes redirectAttributes) {
+
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+
+        if (!connectorOptional.isPresent()) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            return "redirect:/";
+        }
+
+        Connector connector = connectorOptional.get();
+        Cluster cluster = connector.getCluster();
+        boolean result = false;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.pauseConnector(cluster.getConnectorHosts(), connector.getName());
+        }
+
+        if (result) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess("Connector " + connectorId + " paused"));
+        } else {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Connector " + connectorId + " not paused"));
+        }
+
+        return "redirect:/connector/" + connectorId;
+    }
+
+    @RequestMapping(path = "/{connectorId}/resume", method = RequestMethod.POST)
+    public String resumeConnector(@PathVariable final String connectorId,
+                                  final RedirectAttributes redirectAttributes) {
+
+        final Optional<Connector> connectorOptional = Optional.ofNullable(connectorRepository.findByName(connectorId));
+
+        if (!connectorOptional.isPresent()) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newWarning("Unable to find connector!"));
+
+            return "redirect:/";
+        }
+
+        Connector connector = connectorOptional.get();
+        Cluster cluster = connector.getCluster();
+        boolean result = false;
+        try (final KafkaOperations operations = kafkaOperationsFactory.create(cluster, getLoggedInUserId())) {
+            result = operations.resumeConnector(cluster.getConnectorHosts(), connector.getName());
+        }
+
+        if (result) {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newSuccess("Connector " + connectorId + " back"));
+        } else {
+            redirectAttributes.addFlashAttribute("FlashMessage", FlashMessage.newDanger("Connector " + connectorId + " not back"));
+        }
+
+        return "redirect:/connector/" + connectorId;
+    }
+
 
     private void setupBreadCrumbs(final Model model, String name, String url) {
         // Setup breadcrumbs

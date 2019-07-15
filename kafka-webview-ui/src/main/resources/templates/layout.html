@@ -135,12 +135,12 @@
                 <!-- Connectors -->
                 <li class="nav-item nav-dropdown">
                     <a class="nav-link nav-dropdown-toggle" th:href="@{/connector}">
-                        <i class="icon-layers"></i> Connectors
+                        <i class="icon-globe"></i> Connectors
                     </a>
                     <ul class="nav-dropdown-items">
-                        <li class="nav-item" th:each="connector : ${MenuConnector}" th:title="${connector.name}">
-                            <a class="nav-link" th:href="@{/connector/{id}(id=${connector.id})}">
-                                <i class="icon-layers"></i>
+                        <li class="nav-item" th:each="connector : ${MenuConnectors}" th:title="${connector.name}">
+                            <a class="nav-link" th:href="@{/connector/{id}(id=${connector.name})}">
+                                <i class="icon-globe"></i>
                                 [[${connector.name}]]
                             </a>
                         </li>
@@ -192,6 +192,12 @@
                             <a class="nav-link" th:href="@{/configuration/filter}" target="_top">
                                 <i class="icon-magnifier"></i>
                                 Filters
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" target="_top" th:href="@{/configuration/connector}">
+                                <i class="icon-globe"></i>
+                                Connectors
                             </a>
                         </li>
                         <li class="nav-item">
